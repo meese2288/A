@@ -88,12 +88,20 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">将棋盤ツール</h1>
-          <p class="text-[11px] text-slate-500 hidden sm:block">対局・検討・棋譜管理ユーティリティ</p>
+          <p class="text-[11px] text-slate-500 hidden sm:block">対局・検討・棋譜・履歴管理</p>
         </div>
       </div>
 
-      <!-- モード・CPU設定コントロール -->
-      <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+      <!-- モード・CPU・ユーザー設定コントロール -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs sm:text-sm">
+        <!-- 操作者名入力 -->
+        <div class="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <input type="text" id="input-operator-name" onchange="saveOperatorName()" placeholder="操作者名 (ゲスト)" class="w-24 sm:w-28 bg-transparent font-medium text-slate-800 focus:outline-none text-xs sm:text-sm">
+        </div>
+
         <!-- 対戦モード選択 -->
         <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
           <button id="btn-mode-pvp" onclick="setGameMode('pvp')" class="px-2.5 py-1 rounded-md font-medium transition bg-white text-slate-900 shadow-sm">
@@ -111,7 +119,7 @@
             <select id="select-cpu-level" onchange="onCpuSettingChange()" class="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-xs sm:text-sm">
               <option value="1">Lv.1 入門</option>
               <option value="2" selected>Lv.2 初級</option>
-              <option value="3">Lv.3 中級</option>
+              <option value="3">Lv.3 中級 🔒</option>
             </select>
           </div>
 
@@ -125,11 +133,19 @@
         </div>
 
         <!-- 盤面反転ボタン -->
-        <button onclick="toggleFlipBoard()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-medium transition shadow-sm" title="盤面の上下を反転">
+        <button onclick="toggleFlipBoard()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-medium transition shadow-sm" title="盤面の上下を反転">
           <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
           </svg>
-          <span>反転</span>
+          <span class="hidden sm:inline">反転</span>
+        </button>
+
+        <!-- 管理・履歴ログボタン -->
+        <button onclick="openLogsWithAuth()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition shadow-sm" title="履歴ログ・パスワード管理">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span>履歴・管理</span>
         </button>
       </div>
     </div>
@@ -152,7 +168,6 @@
             王手
           </span>
         </div>
-
         <div id="status-message" class="text-xs sm:text-sm font-medium text-slate-600 truncate max-w-[200px] sm:max-w-[260px]">
           対局開始
         </div>
@@ -242,21 +257,12 @@
             <span>待った (1手戻る)</span>
           </button>
 
-          <button onclick="confirmReset()" class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-transparent text-slate-700 font-medium text-xs sm:text-sm transition">
+          <button onclick="requestProtectedReset()" class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-transparent text-slate-700 font-medium text-xs sm:text-sm transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
             </svg>
-            <span>初期配置に戻す</span>
+            <span>初期配置に戻す 🔒</span>
           </button>
-        </div>
-
-        <!-- リセット確認バー（alert/confirmの代替UI） -->
-        <div id="reset-confirm-bar" class="hidden mt-2.5 p-2.5 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between gap-2">
-          <span class="text-xs font-medium text-red-800">盤面を初期化しますか？</span>
-          <div class="flex items-center gap-1.5">
-            <button onclick="resetGame()" class="px-2.5 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs font-bold">実行</button>
-            <button onclick="cancelReset()" class="px-2.5 py-1 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs">キャンセル</button>
-          </div>
         </div>
       </div>
 
@@ -294,7 +300,7 @@
         <p class="font-semibold text-slate-600 mb-1">ヒント・機能</p>
         <ul class="list-disc list-inside space-y-0.5">
           <li>二歩・打ち歩詰め・行き所のない駒打ち・王手放置は自動制限されます。</li>
-          <li>棋譜リストの任意の行をクリックするとその局面を確認でき、そこから指し直すことも可能です。</li>
+          <li>「🔒」付き操作・履歴管理は初期パスワード <code class="bg-slate-200 px-1 rounded text-slate-700">1234</code> で保護されています。</li>
         </ul>
       </div>
 
@@ -306,117 +312,341 @@
     メッセージをここに表示
   </div>
 
+  <!-- パスワード認証モーダル -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-[1px] z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-5">
+      <div class="flex items-center gap-2.5 mb-3">
+        <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">管理者パスワード認証</h3>
+          <p id="auth-modal-desc" class="text-xs text-slate-500">この操作にはパスワードが必要です</p>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <input type="password" id="auth-password-input" placeholder="パスワードを入力 (初期値: 1234)" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-slate-800 focus:outline-none text-sm font-mono">
+        <p id="auth-error-msg" class="hidden text-xs text-red-600 font-semibold mt-1.5">パスワードが正しくありません。</p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2">
+        <button onclick="closeAuthModal(false)" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium transition">
+          キャンセル
+        </button>
+        <button onclick="submitAuthPassword()" class="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold transition shadow-sm">
+          認証する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 履歴ログ＆管理者設定モーダル -->
+  <div id="logs-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-[1px] z-50 flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-3xl w-full max-h-[88vh] flex flex-col overflow-hidden">
+      <!-- モーダルヘッダー -->
+      <div class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center gap-2">
+          <h3 class="text-base font-bold text-slate-900">操作・対局履歴ログ（誰が・いつ）</h3>
+          <span id="logs-count-badge" class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-semibold">0件</span>
+        </div>
+        <button onclick="closeLogsModal()" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- パスワード変更＆アクションバー -->
+      <div class="px-5 py-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <input type="password" id="new-password-input" placeholder="新しいパスワード" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:outline-none focus:border-slate-800 w-36 sm:w-44">
+          <button onclick="handleChangePassword()" class="px-3 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold transition shadow-sm">
+            パスワード変更
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="exportLogsCsv()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition">
+            CSV出力
+          </button>
+          <button onclick="clearAllLogs()" class="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-semibold transition">
+            履歴を全削除
+          </button>
+        </div>
+      </div>
+
+      <!-- 履歴テーブル本体 -->
+      <div class="flex-1 overflow-y-auto p-4">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="border-b-2 border-slate-200 text-slate-500 text-xs">
+              <th class="py-2 px-2.5 font-bold">日時</th>
+              <th class="py-2 px-2.5 font-bold">操作者</th>
+              <th class="py-2 px-2.5 font-bold">モード</th>
+              <th class="py-2 px-2.5 font-bold">操作・結果内容</th>
+            </tr>
+          </thead>
+          <tbody id="logs-table-body" class="divide-y divide-slate-100">
+            <!-- JSで描画 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <script>
     /**
      * =========================================================================
-     * 将棋エンジン・盤面ロジック定義
+     * パスワード認証 ＆ 操作履歴ログ管理モジュール
      * =========================================================================
      */
+    const STORAGE_PASS_KEY = 'shogi_tool_admin_pass_v1';
+    const STORAGE_LOGS_KEY = 'shogi_tool_action_logs_v1';
+    const STORAGE_USER_KEY = 'shogi_tool_operator_name_v1';
 
+    let pendingAuthCallback = null;
+    let pendingAuthCancelCallback = null;
+
+    function initSecurityAndLogs() {
+      if (!localStorage.getItem(STORAGE_PASS_KEY)) {
+        localStorage.setItem(STORAGE_PASS_KEY, '1234');
+      }
+      const savedUser = localStorage.getItem(STORAGE_USER_KEY) || '';
+      const userInput = document.getElementById('input-operator-name');
+      if (userInput) {
+        userInput.value = savedUser;
+      }
+    }
+
+    function getOperatorName() {
+      const val = document.getElementById('input-operator-name').value.trim();
+      return val || 'ゲスト';
+    }
+
+    function saveOperatorName() {
+      const val = document.getElementById('input-operator-name').value.trim();
+      localStorage.setItem(STORAGE_USER_KEY, val);
+    }
+
+    function getCurrentModeLabel() {
+      if (gameMode === 'pvp') return '対人戦';
+      return `CPU対戦 (Lv.${cpuLevel})`;
+    }
+
+    function recordActionLog(detailText) {
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ` +
+                        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+      const entry = {
+        time: timestamp,
+        user: getOperatorName(),
+        mode: getCurrentModeLabel(),
+        detail: detailText
+      };
+
+      try {
+        const logs = JSON.parse(localStorage.getItem(STORAGE_LOGS_KEY) || '[]');
+        logs.unshift(entry);
+        if (logs.length > 300) logs.length = 300;
+        localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(logs));
+      } catch (e) {
+        console.error('Log save error:', e);
+      }
+    }
+
+    function requirePassword(description, onSuccess, onCancel = null) {
+      pendingAuthCallback = onSuccess;
+      pendingAuthCancelCallback = onCancel;
+
+      document.getElementById('auth-modal-desc').textContent = description;
+      const input = document.getElementById('auth-password-input');
+      input.value = '';
+      document.getElementById('auth-error-msg').classList.add('hidden');
+      document.getElementById('auth-modal').classList.remove('hidden');
+      setTimeout(() => input.focus(), 50);
+    }
+
+    function submitAuthPassword() {
+      const inputVal = document.getElementById('auth-password-input').value;
+      const savedPass = localStorage.getItem(STORAGE_PASS_KEY) || '1234';
+
+      if (inputVal === savedPass) {
+        document.getElementById('auth-modal').classList.add('hidden');
+        const cb = pendingAuthCallback;
+        pendingAuthCallback = null;
+        pendingAuthCancelCallback = null;
+        if (cb) cb();
+      } else {
+        document.getElementById('auth-error-msg').classList.remove('hidden');
+        document.getElementById('auth-password-input').select();
+      }
+    }
+
+    function closeAuthModal(isSuccess) {
+      document.getElementById('auth-modal').classList.add('hidden');
+      if (!isSuccess && pendingAuthCancelCallback) {
+        pendingAuthCancelCallback();
+      }
+      pendingAuthCallback = null;
+      pendingAuthCancelCallback = null;
+    }
+
+    document.getElementById('auth-password-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        submitAuthPassword();
+      }
+    });
+
+    function openLogsWithAuth() {
+      requirePassword('履歴ログの閲覧・管理者設定を開くにはパスワードが必要です', () => {
+        recordActionLog('履歴ログ・管理画面を閲覧');
+        renderLogsTable();
+        document.getElementById('logs-modal').classList.remove('hidden');
+      });
+    }
+
+    function closeLogsModal() {
+      document.getElementById('logs-modal').classList.add('hidden');
+    }
+
+    function renderLogsTable() {
+      const logs = JSON.parse(localStorage.getItem(STORAGE_LOGS_KEY) || '[]');
+      const tbody = document.getElementById('logs-table-body');
+      const badge = document.getElementById('logs-count-badge');
+      badge.textContent = `${logs.length}件`;
+
+      if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">履歴データはまだありません</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = logs.map(log => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-2 px-2.5 font-mono text-xs text-slate-500 whitespace-nowrap">${escapeHtml(log.time)}</td>
+          <td class="py-2 px-2.5 font-bold text-slate-800 whitespace-nowrap">${escapeHtml(log.user)}</td>
+          <td class="py-2 px-2.5 text-xs text-slate-600 whitespace-nowrap">${escapeHtml(log.mode)}</td>
+          <td class="py-2 px-2.5 text-slate-700">${escapeHtml(log.detail)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function handleChangePassword() {
+      const newInput = document.getElementById('new-password-input');
+      const newPass = newInput.value.trim();
+      if (!newPass) {
+        showToast('新しいパスワードを入力してください');
+        return;
+      }
+      localStorage.setItem(STORAGE_PASS_KEY, newPass);
+      newInput.value = '';
+      recordActionLog('管理者パスワードを変更');
+      renderLogsTable();
+      showToast('管理者パスワードを変更しました');
+    }
+
+    function clearAllLogs() {
+      localStorage.setItem(STORAGE_LOGS_KEY, '[]');
+      recordActionLog('履歴ログを初期化（全削除）');
+      renderLogsTable();
+      showToast('履歴ログをクリアしました');
+    }
+
+    function exportLogsCsv() {
+      const logs = JSON.parse(localStorage.getItem(STORAGE_LOGS_KEY) || '[]');
+      if (logs.length === 0) {
+        showToast('出力する履歴がありません');
+        return;
+      }
+      const csvLines = ['日時,操作者,モード,内容'];
+      for (const l of logs) {
+        csvLines.push(`"${l.time}","${l.user.replace(/"/g, '""')}","${l.mode}","${l.detail.replace(/"/g, '""')}"`);
+      }
+      const blob = new Blob(['\uFEFF' + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shogi_logs_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSVファイルをダウンロードしました');
+    }
+
+    /**
+     * =========================================================================
+     * 将棋エンジン・定数・グローバル状態定義
+     * =========================================================================
+     */
     const SENTE = 'sente';
     const GOTE = 'gote';
 
-    // 駒の種類定義
-    const PIECE_TYPES = {
-      FU: 'FU', // 歩
-      KY: 'KY', // 香
-      KE: 'KE', // 桂
-      GI: 'GI', // 銀
-      KI: 'KI', // 金
-      KA: 'KA', // 角
-      HI: 'HI', // 飛
-      OU: 'OU', // 王・玉
-      TO: 'TO', // と
-      NY: 'NY', // 成香
-      NK: 'NK', // 成桂
-      NG: 'NG', // 成銀
-      UM: 'UM', // 馬
-      RY: 'RY'  // 龍
-    };
-
-    // 表示用漢字マッピング
     const PIECE_KANJI = {
       FU: '歩', KY: '香', KE: '桂', GI: '銀', KI: '金', KA: '角', HI: '飛', OU: '王',
       TO: 'と', NY: '杏', NK: '圭', NG: '全', UM: '馬', RY: '龍'
     };
 
-    // 成り駒かどうか
-    const IS_PROMOTED = {
-      FU: false, KY: false, KE: false, GI: false, KI: false, KA: false, HI: false, OU: false,
-      TO: true,  NY: true,  NK: true,  NG: true,  UM: true,  RY: true
-    };
-
-    // 成り変換テーブル
     const PROMOTE_MAP = {
       FU: 'TO', KY: 'NY', KE: 'NK', GI: 'NG', KA: 'UM', HI: 'RY'
     };
 
-    // 生駒への還元テーブル（持ち駒にするとき用）
     const UNPROMOTE_MAP = {
       FU: 'FU', KY: 'KY', KE: 'KE', GI: 'GI', KI: 'KI', KA: 'KA', HI: 'HI', OU: 'OU',
       TO: 'FU', NY: 'KY', NK: 'KE', NG: 'GI', UM: 'KA', RY: 'HI'
     };
 
-    // 持ち駒の表示順
+    const IS_PROMOTED = {
+      TO: true, NY: true, NK: true, NG: true, UM: true, RY: true
+    };
+
     const HAND_ORDER = ['HI', 'KA', 'KI', 'GI', 'KE', 'KY', 'FU'];
 
-    // 座標表記用
-    const ZENKAKU_NUM = ['１', '２', '３', '４', '５', '６', '７', '８', '９'];
-    const KANJI_ROW   = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
-
-    // CPU評価用の駒価値
     const PIECE_VALUES = {
-      FU: 100, KY: 320, KE: 360, GI: 520, KI: 600, KA: 850, HI: 1000, OU: 15000,
-      TO: 620, NY: 600, NK: 600, NG: 600, UM: 1150, RY: 1350
+      FU: 100, KY: 320, KE: 350, GI: 500, KI: 580, KA: 850, HI: 1000, OU: 15000,
+      TO: 580, NY: 560, NK: 560, NG: 560, UM: 1150, RY: 1350
     };
 
-    // 持ち駒の評価値（盤上の駒より少し高く評価して持ち駒活用・温存バランスを取る）
     const HAND_VALUES = {
-      FU: 115, KY: 350, KE: 400, GI: 560, KI: 650, KA: 920, HI: 1080
+      FU: 115, KY: 350, KE: 380, GI: 540, KI: 620, KA: 920, HI: 1080
     };
 
-    /**
-     * ゲーム全体の状態管理
-     */
-    let gameState = {
-      board: [], // 9x9: row 0 = 一段目(後手陣最奥), row 8 = 九段目(先手陣最奥), col 0 = 9筋, col 8 = 1筋
-      hands: {
-        sente: { HI: 0, KA: 0, KI: 0, GI: 0, KE: 0, KY: 0, FU: 0 },
-        gote:  { HI: 0, KA: 0, KI: 0, GI: 0, KE: 0, KY: 0, FU: 0 }
-      },
-      turn: SENTE,
-      lastMove: null, // { fromRow, fromCol, toRow, toCol, pieceType, promoted, drop }
-      kifuText: ''
-    };
+    const ZENKAKU_NUM = ['１', '２', '３', '４', '５', '６', '７', '８', '９'];
+    const KANJI_ROW = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
 
-    // 棋譜履歴スタック（初期局面を index 0 に保持）
+    let gameMode = 'pvp';       // 'pvp' | 'cpu'
+    let cpuLevel = 2;           // 1 | 2 | 3
+    let playerSide = SENTE;     // SENTE | GOTE
+    let isFlipped = false;      // false: 先手が下, true: 後手が下
+
+    let gameState = null;
     let historyStack = [];
     let currentHistoryIndex = 0;
 
-    // UI・操作状態
-    let selectedCell = null; // { type: 'board', row, col } または { type: 'hand', owner, pieceType }
-    let legalTargets = [];   // 選択中の駒が移動可能なマス [{ row, col, canPromote, mustPromote }]
-    let pendingPromotionMove = null; // 成り選択待ちの指し手
-
-    // モード・表示設定
-    let gameMode = 'pvp';       // 'pvp' | 'cpu'
-    let cpuLevel = 2;           // 1 | 2 | 3
-    let playerSide = SENTE;     // CPU対戦時の人間側の手番
-    let isFlipped = false;      // 盤面反転フラグ
-    let isCpuThinking = false;
+    let selectedCell = null;    // { type: 'board', row, col } | { type: 'hand', owner, pieceType }
+    let legalTargets = [];      // [{ row, col, canPromote, mustPromote }]
+    let pendingPromotionMove = null;
     let isGameOver = false;
+    let isCpuThinking = false;
     let cpuTimerId = null;
 
     /**
-     * 初期盤面の生成
-     * row 0: 一段目 (後手陣), row 8: 九段目 (先手陣)
-     * col 0: 9筋, col 8: 1筋
+     * 平手初期局面の生成
      */
     function createInitialState() {
       const b = Array.from({ length: 9 }, () => Array(9).fill(null));
+      const backRow = ['KY', 'KE', 'GI', 'KI', 'OU', 'KI', 'GI', 'KE', 'KY'];
 
       // 後手 (row 0, 1, 2)
-      const backRow = ['KY', 'KE', 'GI', 'KI', 'OU', 'KI', 'GI', 'KE', 'KY'];
       for (let c = 0; c < 9; c++) {
         b[0][c] = { owner: GOTE, type: backRow[c] };
         b[2][c] = { owner: GOTE, type: 'FU' };
@@ -466,14 +696,11 @@
      * =========================================================================
      */
 
-    /**
-     * 指定マスにある駒の「疑似合法手（王手放置チェック前）」の到達マス一覧を返す
-     */
     function getPseudoAttacks(board, r, c) {
       const piece = board[r][c];
       if (!piece) return [];
 
-      const dir = piece.owner === SENTE ? -1 : 1; // 先手は上(-1)、後手は下(+1)へ進む
+      const dir = piece.owner === SENTE ? -1 : 1;
       const targets = [];
 
       const addStep = (dr, dc) => {
@@ -505,7 +732,6 @@
         }
       };
 
-      // 金と同じ動き
       const addGoldSteps = () => {
         addStep(1, -1); addStep(1, 0); addStep(1, 1);
         addStep(0, -1);                addStep(0, 1);
@@ -564,9 +790,6 @@
       return targets;
     }
 
-    /**
-     * 指定した手番(side)の玉(OU)が王手されているか判定する
-     */
     function isKingInCheck(board, side) {
       let kingRow = -1, kingCol = -1;
       for (let r = 0; r < 9; r++) {
@@ -580,7 +803,7 @@
         }
         if (kingRow !== -1) break;
       }
-      if (kingRow === -1) return true; // 万が一玉がない場合
+      if (kingRow === -1) return true;
 
       const opponent = side === SENTE ? GOTE : SENTE;
       for (let r = 0; r < 9; r++) {
@@ -597,16 +820,10 @@
       return false;
     }
 
-    /**
-     * 相手陣（成れる段）かどうか
-     */
     function isPromotionZone(row, owner) {
       return owner === SENTE ? row <= 2 : row >= 6;
     }
 
-    /**
-     * 行き所のない駒になるため「強制成り」が必要か判定
-     */
     function mustPromotePiece(pieceType, toRow, owner) {
       if (owner === SENTE) {
         if ((pieceType === 'FU' || pieceType === 'KY') && toRow === 0) return true;
@@ -618,23 +835,18 @@
       return false;
     }
 
-    /**
-     * 指し手を状態に適用した新しい状態を返す（純粋関数）
-     */
     function applyMoveToState(state, move) {
       const next = cloneState(state);
       const side = next.turn;
       const opponent = side === SENTE ? GOTE : SENTE;
 
       if (move.drop) {
-        // 持ち駒を打つ
         next.hands[side][move.pieceType]--;
         next.board[move.toRow][move.toCol] = {
           owner: side,
           type: move.pieceType
         };
       } else {
-        // 盤上の駒を動かす
         const movingPiece = next.board[move.fromRow][move.fromCol];
         const capturedPiece = next.board[move.toRow][move.toCol];
 
@@ -658,9 +870,6 @@
       return next;
     }
 
-    /**
-     * 指定した手番の全合法手を生成する（二歩・打ち歩詰め・行き所のない駒・王手放置を完全除外）
-     */
     function generateAllLegalMoves(state, checkUchifuzume = true) {
       const side = state.turn;
       const opponent = side === SENTE ? GOTE : SENTE;
@@ -702,7 +911,6 @@
       }
 
       // 2. 持ち駒を打つ手
-      // 各筋に自分の未成の歩があるか事前チェック（二歩判定用）
       const hasPawnInCol = Array(9).fill(false);
       for (let c = 0; c < 9; c++) {
         for (let r = 0; r < 9; r++) {
@@ -718,13 +926,10 @@
         if (state.hands[side][pType] <= 0) continue;
 
         for (let r = 0; r < 9; r++) {
-          // 行き所のない段への打ち込み禁止
           if (mustPromotePiece(pType, r, side)) continue;
 
           for (let c = 0; c < 9; c++) {
             if (state.board[r][c] !== null) continue;
-
-            // 二歩の禁止
             if (pType === 'FU' && hasPawnInCol[c]) continue;
 
             const dropMove = {
@@ -736,14 +941,10 @@
             };
 
             const nextState = applyMoveToState(state, dropMove);
-
-            // 自玉が王手放置になっていないか
             if (isKingInCheck(nextState.board, side)) continue;
 
-            // 打ち歩詰めの禁止チェック
             if (checkUchifuzume && pType === 'FU') {
               if (isKingInCheck(nextState.board, opponent)) {
-                // 相手玉に王手がかかった場合、相手に合法手が1つもなければ打ち歩詰め反則
                 const oppMoves = generateAllLegalMoves(nextState, false);
                 if (oppMoves.length === 0) {
                   continue;
@@ -759,9 +960,6 @@
       return legalMoves;
     }
 
-    /**
-     * 日本語標準棋譜表記の生成（例：▲７六歩、△２二角成、▲同　銀、▲４五歩打）
-     */
     function formatKifuMove(stateBefore, move) {
       const mark = stateBefore.turn === SENTE ? '▲' : '△';
       const toSuji = ZENKAKU_NUM[8 - move.toCol];
@@ -777,7 +975,6 @@
       let suffix = '';
 
       if (move.drop) {
-        // 盤上の同種駒もそのマスに動ける場合のみ「打」を付けるのが正式だが、視認性のため必要に応じて付与
         let canBoardPieceReach = false;
         for (let r = 0; r < 9; r++) {
           for (let c = 0; c < 9; c++) {
@@ -810,9 +1007,6 @@
      * =========================================================================
      */
 
-    /**
-     * 静的局面評価関数（先手プラス・後手マイナス）
-     */
     function evaluateBoard(state) {
       let score = 0;
 
@@ -823,17 +1017,13 @@
 
           let val = PIECE_VALUES[p.type] || 0;
 
-          // 位置ボーナス（玉の囲い意識・駒の前進ボーナス）
           if (p.type === 'OU') {
-            // 玉は自陣の隅（1九や9九付近）にいる方が安全度が高い
             const homeRankDist = p.owner === SENTE ? (8 - r) : r;
-            const cornerDist = Math.abs(c - 4); // 中央(5筋)から離れるほどボーナス
+            const cornerDist = Math.abs(c - 4);
             val += cornerDist * 18 - homeRankDist * 25;
           } else {
-            // 攻撃駒は相手陣に近づくほど価値が上がる
             const advance = p.owner === SENTE ? (8 - r) : r;
             val += advance * 6;
-            // 中央制圧ボーナス
             val += (4 - Math.abs(c - 4)) * 4;
           }
 
@@ -841,7 +1031,6 @@
         }
       }
 
-      // 持ち駒の評価
       for (const pType of HAND_ORDER) {
         score += state.hands.sente[pType] * HAND_VALUES[pType];
         score -= state.hands.gote[pType] * HAND_VALUES[pType];
@@ -850,13 +1039,9 @@
       return score;
     }
 
-    /**
-     * Alpha-Beta探索
-     */
     function alphaBeta(state, depth, alpha, beta, maximizingPlayer) {
       const legalMoves = generateAllLegalMoves(state, false);
       if (legalMoves.length === 0) {
-        // 詰みまたはステイルメイト
         return maximizingPlayer ? -99999 - depth * 100 : 99999 + depth * 100;
       }
 
@@ -864,7 +1049,6 @@
         return evaluateBoard(state);
       }
 
-      // 探索効率向上のためのムーブオーダリング（駒を取る手・成る手を優先）
       legalMoves.sort((a, b) => {
         const scoreA = (state.board[a.toRow][a.toCol] ? 10 : 0) + (a.promote ? 5 : 0);
         const scoreB = (state.board[b.toRow][b.toCol] ? 10 : 0) + (b.promote ? 5 : 0);
@@ -894,16 +1078,12 @@
       }
     }
 
-    /**
-     * CPUの次の一手を決定する
-     */
     function chooseCpuMove(state, level) {
       const legalMoves = generateAllLegalMoves(state, true);
       if (legalMoves.length === 0) return null;
 
       const isSente = state.turn === SENTE;
 
-      // Lv.1 (入門): ランダム主体（駒を取れる手があれば少しだけ確率を上げる）
       if (level === 1) {
         const weighted = [];
         for (const m of legalMoves) {
@@ -914,7 +1094,6 @@
         return weighted[Math.floor(Math.random() * weighted.length)];
       }
 
-      // Lv.2 (初級): 1手読み（駒得・成り・王手を評価し、わずかな揺らぎを加える）
       if (level === 2) {
         let bestMoves = [];
         let bestScore = isSente ? -Infinity : Infinity;
@@ -922,11 +1101,9 @@
         for (const move of legalMoves) {
           const next = applyMoveToState(state, move);
           let score = evaluateBoard(next);
-          // 王手をかける手に少しボーナス
           if (isKingInCheck(next.board, next.turn)) {
             score += isSente ? 45 : -45;
           }
-          // 同点時の多様性のため ±15 のノイズを加算
           score += (Math.random() * 30 - 15);
 
           if (isSente) {
@@ -938,15 +1115,12 @@
         return bestMoves[0];
       }
 
-      // Lv.3 (中級): 2〜3手読み Alpha-Beta探索
-      // 合法手数に応じて探索深さを自動調整（レスポンス速度の維持）
       const depth = legalMoves.length > 75 ? 2 : 3;
       let bestMove = legalMoves[0];
       let bestScore = isSente ? -Infinity : Infinity;
       let alpha = -Infinity;
       let beta = Infinity;
 
-      // 駒取り・成りを優先ソート
       legalMoves.sort((a, b) => {
         const sA = (state.board[a.toRow][a.toCol] ? 10 : 0) + (a.promote ? 5 : 0);
         const sB = (state.board[b.toRow][b.toCol] ? 10 : 0) + (b.promote ? 5 : 0);
@@ -992,9 +1166,6 @@
       renderAll();
     }
 
-    /**
-     * モード切替（対人 / CPU）
-     */
     function setGameMode(mode) {
       gameMode = mode;
       const btnPvp = document.getElementById('btn-mode-pvp');
@@ -1013,20 +1184,42 @@
 
       clearSelection();
       updatePlayerLabels();
+      recordActionLog(`対戦モードを「${getCurrentModeLabel()}」に切替`);
       triggerCpuIfNeeded();
     }
 
     function onCpuSettingChange() {
-      cpuLevel = parseInt(document.getElementById('select-cpu-level').value, 10);
+      const selectEl = document.getElementById('select-cpu-level');
+      const selectedVal = parseInt(selectEl.value, 10);
+
+      // Lv.3 (中級) はパスワード保護対象
+      if (selectedVal === 3 && cpuLevel !== 3) {
+        requirePassword(
+          'CPU Lv.3（中級）を選択するにはパスワードが必要です',
+          () => {
+            cpuLevel = 3;
+            updatePlayerLabels();
+            recordActionLog('CPUレベルを Lv.3（中級）に変更');
+            showToast('CPU Lv.3（中級）を解除しました');
+          },
+          () => {
+            selectEl.value = String(cpuLevel);
+          }
+        );
+        return;
+      }
+
+      cpuLevel = selectedVal;
       updatePlayerLabels();
+      recordActionLog(`CPUレベルを Lv.${cpuLevel} に変更`);
     }
 
     function onPlayerSideChange() {
       playerSide = document.getElementById('select-player-side').value;
-      // プレイヤーが後手を選んだ場合は自動的に盤面を後手視点に反転
       isFlipped = (playerSide === GOTE);
       clearSelection();
       renderAll();
+      recordActionLog(`プレイヤー手番を「${playerSide === SENTE ? '先手' : '後手'}」に変更`);
       triggerCpuIfNeeded();
     }
 
@@ -1042,14 +1235,10 @@
       document.getElementById('promotion-modal').classList.add('hidden');
     }
 
-    /**
-     * 盤面のマスをクリックした時の処理
-     */
     function onBoardCellClick(row, col) {
       if (isCpuThinking || isGameOver) return;
       if (gameMode === 'cpu' && gameState.turn !== playerSide) return;
 
-      // 移動先候補としてハイライトされているマスをクリックした場合
       const targetMatch = legalTargets.find(t => t.row === row && t.col === col);
       if (selectedCell && targetMatch) {
         if (selectedCell.type === 'hand') {
@@ -1074,7 +1263,6 @@
           if (targetMatch.mustPromote) {
             executeMove({ ...baseMove, promote: true });
           } else if (targetMatch.canPromote) {
-            // 成り・不成の選択ダイアログを表示
             pendingPromotionMove = baseMove;
             const modal = document.getElementById('promotion-modal');
             document.getElementById('promote-yes-kanji').textContent = PIECE_KANJI[PROMOTE_MAP[baseMove.pieceType]];
@@ -1087,10 +1275,8 @@
         }
       }
 
-      // 自分の盤上の駒を選択した場合
       const clickedPiece = gameState.board[row][col];
       if (clickedPiece && clickedPiece.owner === gameState.turn) {
-        // すでに選択中の駒を再クリックした場合は解除
         if (selectedCell && selectedCell.type === 'board' && selectedCell.row === row && selectedCell.col === col) {
           clearSelection();
           renderBoard();
@@ -1105,15 +1291,11 @@
         return;
       }
 
-      // それ以外の空マスや相手駒をクリックした場合は選択解除
       clearSelection();
       renderBoard();
       renderHands();
     }
 
-    /**
-     * 持ち駒をクリックした時の処理
-     */
     function onHandPieceClick(owner, pieceType) {
       if (isCpuThinking || isGameOver) return;
       if (owner !== gameState.turn) return;
@@ -1133,9 +1315,6 @@
       renderHands();
     }
 
-    /**
-     * 選択中の駒に対する合法移動先を抽出
-     */
     function computeLegalTargetsForSelection() {
       legalTargets = [];
       if (!selectedCell) return;
@@ -1153,7 +1332,6 @@
           const entry = map.get(key);
           if (m.promote) entry.canPromote = true;
         }
-        // promote: true のみ存在し promote: false が存在しない場合は強制成り
         for (const [key, entry] of map.entries()) {
           const hasUnpromoted = filtered.some(m => m.toRow === entry.row && m.toCol === entry.col && !m.promote);
           if (entry.canPromote && !hasUnpromoted) {
@@ -1169,7 +1347,6 @@
       }
     }
 
-    // 成りモーダルのボタンイベント登録
     document.getElementById('btn-promote-yes').addEventListener('click', () => {
       if (pendingPromotionMove) {
         const move = { ...pendingPromotionMove, promote: true };
@@ -1186,15 +1363,11 @@
       }
     });
 
-    /**
-     * 指し手を確定して局面を進める
-     */
     function executeMove(move) {
       const kifuStr = formatKifuMove(gameState, move);
       const nextState = applyMoveToState(gameState, move);
       nextState.kifuText = kifuStr;
 
-      // 過去局面を閲覧中に新しい手を指した場合は、それ以降の分岐履歴を切り捨てる
       if (currentHistoryIndex < historyStack.length - 1) {
         historyStack = historyStack.slice(0, currentHistoryIndex + 1);
       }
@@ -1208,9 +1381,65 @@
       triggerCpuIfNeeded();
     }
 
-    /**
-     * 詰み・王手判定を行い画面全体を更新
-     */
+    function triggerCpuIfNeeded() {
+      if (isGameOver) return;
+      if (gameMode !== 'cpu') return;
+      if (gameState.turn === playerSide) return;
+
+      isCpuThinking = true;
+      const statusMsg = document.getElementById('status-message');
+      statusMsg.textContent = `CPU (Lv.${cpuLevel}) 思考中...`;
+      statusMsg.className = 'text-xs sm:text-sm font-semibold text-amber-700 animate-pulse';
+
+      if (cpuTimerId) clearTimeout(cpuTimerId);
+      cpuTimerId = setTimeout(() => {
+        cpuTimerId = null;
+        const cpuMove = chooseCpuMove(gameState, cpuLevel);
+        isCpuThinking = false;
+        if (cpuMove) {
+          executeMove(cpuMove);
+        } else {
+          checkGameStatusAndRender();
+        }
+      }, 320);
+    }
+
+    function undoMove() {
+      if (currentHistoryIndex <= 0) return;
+      if (cpuTimerId) {
+        clearTimeout(cpuTimerId);
+        cpuTimerId = null;
+      }
+      isCpuThinking = false;
+
+      // CPU対戦で自分の手番のときに「待った」をした場合は、CPUの手も含めて2手戻す
+      let stepBack = 1;
+      if (gameMode === 'cpu' && gameState.turn === playerSide && currentHistoryIndex >= 2) {
+        stepBack = 2;
+      }
+
+      const targetIdx = Math.max(0, currentHistoryIndex - stepBack);
+      historyStack = historyStack.slice(0, targetIdx + 1);
+      currentHistoryIndex = targetIdx;
+      gameState = cloneState(historyStack[targetIdx]);
+      clearSelection();
+      checkGameStatusAndRender();
+    }
+
+    function jumpToMove(index) {
+      if (index < 0 || index >= historyStack.length) return;
+      if (cpuTimerId) {
+        clearTimeout(cpuTimerId);
+        cpuTimerId = null;
+      }
+      isCpuThinking = false;
+
+      currentHistoryIndex = index;
+      gameState = cloneState(historyStack[index]);
+      clearSelection();
+      checkGameStatusAndRender();
+    }
+
     function checkGameStatusAndRender() {
       const inCheck = isKingInCheck(gameState.board, gameState.turn);
       const legalMoves = generateAllLegalMoves(gameState, true);
@@ -1225,10 +1454,12 @@
           checkBadge.classList.remove('hidden');
           statusMsg.textContent = `詰み — ${winner}の勝ち`;
           statusMsg.className = 'text-xs sm:text-sm font-bold text-red-600';
+          recordActionLog(`終局（詰み）：${winner}の勝ち（総手数 ${currentHistoryIndex}手）`);
         } else {
           checkBadge.classList.add('hidden');
           statusMsg.textContent = `ステイルメイト — ${winner}の勝ち`;
           statusMsg.className = 'text-xs sm:text-sm font-bold text-amber-700';
+          recordActionLog(`終局（ステイルメイト）：${winner}の勝ち（総手数 ${currentHistoryIndex}手）`);
         }
       } else {
         isGameOver = false;
@@ -1247,110 +1478,22 @@
     }
 
     /**
-     * CPUの手番であれば非同期で思考・着手を実行
+     * パスワード認証付きの盤面リセット
      */
-    function triggerCpuIfNeeded() {
-      if (cpuTimerId) {
-        clearTimeout(cpuTimerId);
-        cpuTimerId = null;
-      }
-
-      if (gameMode !== 'cpu' || isGameOver) {
+    function requestProtectedReset() {
+      requirePassword('盤面を初期配置に戻すにはパスワードが必要です', () => {
+        if (cpuTimerId) {
+          clearTimeout(cpuTimerId);
+          cpuTimerId = null;
+        }
         isCpuThinking = false;
-        return;
-      }
-
-      // 最新局面でのみCPUは思考する（過去棋譜閲覧中は動かさない）
-      if (currentHistoryIndex !== historyStack.length - 1) {
-        isCpuThinking = false;
-        return;
-      }
-
-      if (gameState.turn !== playerSide) {
-        isCpuThinking = true;
-        const statusMsg = document.getElementById('status-message');
-        statusMsg.textContent = `CPU (Lv.${cpuLevel}) 思考中...`;
-        statusMsg.className = 'text-xs sm:text-sm font-semibold text-indigo-600 animate-pulse';
-
-        cpuTimerId = setTimeout(() => {
-          const cpuMove = chooseCpuMove(gameState, cpuLevel);
-          isCpuThinking = false;
-          if (cpuMove) {
-            executeMove(cpuMove);
-          }
-        }, 280);
-      } else {
-        isCpuThinking = false;
-      }
+        initApp();
+        recordActionLog('盤面を初期配置にリセット（新規対局開始）');
+        triggerCpuIfNeeded();
+        showToast('初期配置に戻しました');
+      });
     }
 
-    /**
-     * 待った（1手戻る / CPU戦の場合は人間の手番まで戻す）
-     */
-    function undoMove() {
-      if (currentHistoryIndex <= 0) return;
-      if (cpuTimerId) {
-        clearTimeout(cpuTimerId);
-        cpuTimerId = null;
-      }
-      isCpuThinking = false;
-      clearSelection();
-
-      let targetIndex = currentHistoryIndex - 1;
-      // CPU対戦で現在が人間の手番なら、CPUの手と自分の手の2手分戻す
-      if (gameMode === 'cpu' && gameState.turn === playerSide && targetIndex >= 1) {
-        targetIndex -= 1;
-      }
-
-      historyStack = historyStack.slice(0, targetIndex + 1);
-      currentHistoryIndex = targetIndex;
-      gameState = cloneState(historyStack[currentHistoryIndex]);
-      checkGameStatusAndRender();
-    }
-
-    /**
-     * 任意の棋譜インデックスへジャンプ（検討用）
-     */
-    function jumpToMove(index) {
-      if (index < 0 || index >= historyStack.length) return;
-      if (cpuTimerId) {
-        clearTimeout(cpuTimerId);
-        cpuTimerId = null;
-      }
-      isCpuThinking = false;
-      clearSelection();
-
-      currentHistoryIndex = index;
-      gameState = cloneState(historyStack[currentHistoryIndex]);
-      checkGameStatusAndRender();
-    }
-
-    /**
-     * 盤面リセット確認・実行
-     */
-    function confirmReset() {
-      document.getElementById('reset-confirm-bar').classList.remove('hidden');
-    }
-
-    function cancelReset() {
-      document.getElementById('reset-confirm-bar').classList.add('hidden');
-    }
-
-    function resetGame() {
-      cancelReset();
-      if (cpuTimerId) {
-        clearTimeout(cpuTimerId);
-        cpuTimerId = null;
-      }
-      isCpuThinking = false;
-      initApp();
-      triggerCpuIfNeeded();
-      showToast('初期配置に戻しました');
-    }
-
-    /**
-     * 棋譜テキストのクリップボードコピー
-     */
     function copyKifuToClipboard() {
       if (historyStack.length <= 1) {
         showToast('コピーする棋譜がありません');
@@ -1359,6 +1502,7 @@
 
       const lines = [];
       lines.push(`# 将棋盤ツール 棋譜データ`);
+      lines.push(`操作者：${getOperatorName()}`);
       lines.push(`手数：${historyStack.length - 1}手`);
       lines.push('---');
       for (let i = 1; i < historyStack.length; i++) {
@@ -1446,13 +1590,11 @@
       rowCoords.innerHTML = '';
 
       for (let i = 0; i < 9; i++) {
-        // 通常時は左から 9,8,7...1、反転時は 1,2,3...9
         const sujiNum = isFlipped ? (i + 1) : (9 - i);
         const colDiv = document.createElement('div');
         colDiv.textContent = sujiNum;
         colCoords.appendChild(colDiv);
 
-        // 通常時は上から 一,二...九、反転時は 九,八...一
         const danIdx = isFlipped ? (8 - i) : i;
         const rowDiv = document.createElement('div');
         rowDiv.textContent = KANJI_ROW[danIdx];
@@ -1491,11 +1633,9 @@
 
           const piece = gameState.board[r][c];
           if (piece) {
-            // 視覚的な向き：通常の先手駒は上向き、後手駒は180度回転。盤面反転時は逆になる。
             const isUpsideDown = isFlipped ? (piece.owner === SENTE) : (piece.owner === GOTE);
             const isProm = IS_PROMOTED[piece.type];
 
-            // 玉の表示分け（先手は王、後手は玉）
             let kanji = PIECE_KANJI[piece.type];
             if (piece.type === 'OU' && piece.owner === GOTE) {
               kanji = '玉';
@@ -1512,14 +1652,11 @@
             cell.appendChild(wrapper);
           }
 
-          // 合法手ハイライトマーカー
           if (targetInfo) {
             const marker = document.createElement('div');
             if (piece) {
-              // 相手の駒を取れるマスは赤みがかった枠リング
               marker.className = 'absolute inset-0.5 border-2 border-red-600/80 bg-red-500/15 rounded-sm pointer-events-none';
             } else {
-              // 空きマスへの移動候補は中央のドット
               marker.className = 'w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-700/60 pointer-events-none shadow-sm';
             }
             cell.appendChild(marker);
@@ -1599,7 +1736,6 @@
 
       listEl.innerHTML = '';
 
-      // 0手目（開始局面）
       const startRow = document.createElement('div');
       startRow.className = `flex items-center justify-between px-2.5 py-1.5 rounded cursor-pointer transition ${
         currentHistoryIndex === 0 ? 'bg-slate-800 text-white font-semibold' : 'hover:bg-slate-100 text-slate-600'
@@ -1630,7 +1766,6 @@
         listEl.appendChild(row);
       }
 
-      // 現在の手が見える位置へ自動スクロール
       const activeEl = listEl.children[currentHistoryIndex];
       if (activeEl) {
         activeEl.scrollIntoView({ block: 'nearest' });
@@ -1639,7 +1774,9 @@
 
     // アプリケーション起動
     window.onload = function() {
+      initSecurityAndLogs();
       initApp();
+      recordActionLog('ツールを起動・新規対局準備');
     };
   </script>
 </body>
